@@ -12,11 +12,33 @@ from django.db.models import Q
 # Create your views here.
 API_KEY = 'cwG5DvwzcCiciFDRjn8IclxV8pRbGzWx'
 
-@api_view(('GET',))
-@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+@api_view(('GET','POST'))
 def search(request):
     form = FileForm()
-    if request.GET.get('origin'):
+    if request.method=='POST':
+        try:
+            to = request.data['origin']
+            fro = request.data['destination']
+        except:
+            return Response({"error": "Please enter valid values"}, status=status.HTTP_400_BAD_REQUEST)
+        key = API_KEY
+        try:
+            distobj = History.objects.get(Q(origin=to,destination=fro) | Q(origin=fro,destination=to)) 
+            dist = distobj.dist 
+        except:
+            params = {"from": fro, "to": to,"key":key}
+            res = requests.get('http://www.mapquestapi.com/directions/v2/route?',params=params)
+            res = res.json()
+            try:
+                dist =  res['route']['distance']*1.615
+                dist = "{:.2f}".format(dist) + " km"
+                obj = History(origin = to,destination = fro,dist = dist)
+                obj.save()
+            except:
+                return Response({"error": "Please enter valid values",}, status=status.HTTP_400_BAD_REQUEST,)
+        return Response({'Distance':dist,'Origin': to,'Destination':fro,}, status=status.HTTP_200_OK,)
+
+    elif request.GET.get('origin'):
         try:
             to = request.GET.get('origin')
             fro = request.GET.get('destination')
