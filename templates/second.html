@@ -95,7 +95,9 @@
       <form  method="GET" enctype="multipart/form-data">
           {{ form|crispy }}
           <button class="btn btn-primary" type="submit">Submit</button>
+          {% if error %} {{error}} {% endif %}
       </form>
+      
     </div>
   </body>
 </html>
